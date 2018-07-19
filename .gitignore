@@ -1,0 +1,11 @@
+/target/
+/.idea/
+/src/main/resources/backUP/
+/db.mwb
+/error.txt
+/fail.txt
+/db.mwb.bak
+/result.csv
+/tasks_full.txt
+/proxy-list.txt
+/tasks.txt
