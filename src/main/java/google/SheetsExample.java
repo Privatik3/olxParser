@@ -55,7 +55,7 @@ public class SheetsExample {
 
     public static String generateSheet(List<Ad> ads) throws IOException {
 
-        return "1KBcfYbdmaWAMBFEJd0sZ_tW8sh_bm3-VPYxUElG-dfs";
+        return "https://docs.google.com/spreadsheets/d/1KBcfYbdmaWAMBFEJd0sZ_tW8sh_bm3-VPYxUElG-dfs/edit";
 
         /*// 1. CREATE NEW SPREADSHEET
         // TODO: Assign values to desired fields of `requestBody`:

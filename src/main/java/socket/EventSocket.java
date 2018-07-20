@@ -10,7 +10,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 @ClientEndpoint
-@ServerEndpoint(value = "/events/")
+@ServerEndpoint(value = "/task/")
 public class EventSocket {
     @OnOpen
     public void onWebSocketConnect(Session sess) {
