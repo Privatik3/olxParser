@@ -34,35 +34,34 @@ public class TaskManager {
         ManagerTask task = new ManagerTask(token, parameters);
         tasks.add(task);
 
-        EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() +"\"}]}");
+        EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() + "\"}]}");
     }
 
     private static void updateQuery() {
         for (ManagerTask task : tasks) {
             EventSocket.sendMessage(task.getToken(),
-                    "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + (tasks.indexOf(task) + 1) +"\"}]}");
+                    "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + (tasks.indexOf(task) + 1) + "\"}]}");
         }
     }
 
     private static void doTask() {
         Thread demon = new Thread(() -> {
             while (true) {
-                if (tasks.size() > 0) {
-                    ManagerTask task = tasks.get(0);
-                    task.start();
-
-                    EventSocket.sendMessage(task.getToken(),
-                            "{\"message\":\"done\",\"parameters\":[{\"name\":\"url\",\"value\":\"" + task.getResultLink() +"\"}]}");
-
-                    tasks.remove(task);
-                    updateQuery();
-
-                    System.gc();
-                    ProxyManager.clear();
-                }
                 try {
+                    if (tasks.size() > 0) {
+                        ManagerTask task = tasks.get(0);
+                        task.start();
+
+                        EventSocket.sendResult(task);
+                        tasks.remove(task);
+                        updateQuery();
+
+                        System.gc();
+                        ProxyManager.clear();
+                    }
                     Thread.sleep(500);
-                } catch (InterruptedException ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         });
         demon.setDaemon(true);
@@ -83,8 +82,6 @@ public class TaskManager {
 
         Files.write(Paths.get("result.csv"), data, Charset.forName("UTF-8"));
     }
-
-
 
 
 }

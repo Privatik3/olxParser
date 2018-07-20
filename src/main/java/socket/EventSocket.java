@@ -1,9 +1,8 @@
 package socket;
 
-import manager.Status;
+import manager.ManagerTask;
 import manager.TaskManager;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.websocket.ClientEndpoint;
@@ -15,7 +14,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +24,14 @@ public class EventSocket {
 
     private static HashMap<String, Session> allTokens = new HashMap<>();
     private String token;
+
+    public static void sendResult(ManagerTask task) throws IOException {
+        String token = task.getToken();
+        EventSocket.sendMessage(token,
+                "{\"message\":\"done\",\"parameters\":[{\"name\":\"url\",\"value\":\"" + task.getResultLink() +"\"}]}");
+
+        getSess(token).close();
+    }
 
     @OnOpen
     public void onWebSocketConnect(Session sess) throws IOException {

@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import socket.EventSocket;
 import utility.RequestManager;
 
 import java.io.IOException;
@@ -33,14 +34,6 @@ public class ManagerTask {
 
     public String getToken() {
         return token;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public Status getStatus() {
-        return status;
     }
 
     public int getAdsCount() {
@@ -79,7 +72,13 @@ public class ManagerTask {
 //        saveToDB(result);
 //        saveToFile(result);
             RequestManager.closeClient();*/
-            Thread.sleep(10000);
+
+            for (int i = 1; i <= 5; i++) {
+                Thread.sleep(2000);
+                EventSocket.sendMessage(token,
+                        "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + i * 20 + "\"}]}");
+            }
+
             this.resultLink = "https://www.ibm.com/developerworks/ru/library/j-5things4/index.html";
         } catch (Exception e) {
             e.printStackTrace();
