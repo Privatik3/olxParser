@@ -12,78 +12,42 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-import java.util.*;
+import java.io.IOException;
 
 @ClientEndpoint
 @ServerEndpoint(value = "/task/")
 public class EventSocket {
+
+    private Session sess;
+
     @OnOpen
-    public void onWebSocketConnect(Session sess) {
+    public void onWebSocketConnect(Session sess) throws IOException {
+        this.sess = sess;
         System.out.println("Socket Connected: " + sess);
     }
 
     @OnMessage
     public void onWebSocketText(String json) {
         System.out.println("Received TEXT json: " + json);
-        JSONObject obj = new JSONObject(json);
-        String message = obj.getJSONObject("message").getString("message");
+//        json = "{\"message\":\"start\",\"parameters\":[{\"name\":\"view\",\"value\":\"\"},{\"name\":\"min_id\",\"value\":\"\"},{\"name\":\"q\",\"value\":\"\"},{\"name\":\"search[city_id]\",\"value\":\"\"},{\"name\":\"search[region_id]\",\"value\":\"\"},{\"name\":\"search[district_id]\",\"value\":\"0\"},{\"name\":\"search[dist]\",\"value\":\"0\"},{\"name\":\"search[filter_float_price:from]\",\"value\":\"\"},{\"name\":\"search[filter_float_price:to]\",\"value\":\"\"},{\"name\":\"search[category_id]\",\"value\":\"\"},{\"name\":\"page\",\"value\":\"1\"}]}";
+
+        System.out.println("MESSAGE FROM: " + sess.getId());
+
+        /*JSONObject obj = new JSONObject(json);
+        String message = obj.getString("message");
 
         switch (message) {
             case "start": {
-                System.out.println("Получена команда к старту парсинга, ПАРАМЕТРЫ:");
+                System.out.println("Получена команда к старту, ПАРАМЕТРЫ:");
                 JSONArray params = obj.getJSONArray("parameters");
                 for (int i = 0; i < params.length(); i++) {
-                    System.out.println(jsonToMap(params.getJSONObject(i)));
+                    String name = params.getJSONObject(i).getString("name");
+                    String value = params.getJSONObject(i).getString("value");
+
+                    System.out.println("    *" + name + ": " + value);
                 }
             }
-        }
-
-
-    }
-
-    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        Map<String, Object> retMap = new HashMap<String, Object>();
-
-        if(json != JSONObject.NULL) {
-            retMap = toMap(json);
-        }
-        return retMap;
-    }
-
-    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<String, Object>();
-
-        Iterator<String> keysItr = object.keys();
-        while(keysItr.hasNext()) {
-            String key = keysItr.next();
-            Object value = object.get(key);
-
-            if(value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            }
-
-            else if(value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            map.put(key, value);
-        }
-        return map;
-    }
-
-    public static List<Object> toList(JSONArray array) throws JSONException {
-        List<Object> list = new ArrayList<Object>();
-        for(int i = 0; i < array.length(); i++) {
-            Object value = array.get(i);
-            if(value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            }
-
-            else if(value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            list.add(value);
-        }
-        return list;
+        }*/
     }
 
     @OnClose
