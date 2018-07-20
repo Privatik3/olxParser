@@ -29,7 +29,6 @@ public class EventSocket {
         String token = getToken(sess);
         if (allTokens.contains(token)) {
             sess.close();
-            System.out.println("ТАКОЙ ТОКЕН УЖЕ ОТКРЫТ!!!");
         } else {
             System.out.println("ТОКЕН ДОБАВЛЕН В БАЗУ: " + token);
             allTokens.add(token);
@@ -68,9 +67,13 @@ public class EventSocket {
 
     @OnClose
     public void onWebSocketClose(CloseReason reason) {
-        String token = getToken(sess);
-        System.out.println("ЗАКРЫВАЮ СОЕДЕНЕНИЕ, TOKEN: " + token);
-        allTokens.remove(token);
+        if (sess != null) {
+            String token = getToken(sess);
+            System.out.println("ЗАКРЫВАЮ СОЕДЕНЕНИЕ, TOKEN: " + token);
+            allTokens.remove(token);
+        } else {
+            System.out.println("ТАКОЙ ТОКЕН УЖЕ ОТКРЫТ!!!");
+        }
     }
 
     @OnError
