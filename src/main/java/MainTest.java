@@ -33,7 +33,7 @@ public class MainTest {
             parameters.put("view", "");
             parameters.put("pages", pageCount);
 
-            TaskManager.initTask(parameters);
+//            TaskManager.initTask(parameters);
             System.gc();
             ProxyManager.clear();
         }

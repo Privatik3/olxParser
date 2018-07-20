@@ -8,6 +8,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import socket.EventSocket;
 import utility.ProxyManager;
 import utility.RequestManager;
 
@@ -17,39 +18,55 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class TaskManager {
 
+    private static CopyOnWriteArrayList<ManagerTask> tasks = new CopyOnWriteArrayList<>();
 
-    public static void initTask(HashMap<String, String> parameters) throws IOException, InterruptedException {
+    static {
+        doTask();
+    }
 
-        ArrayList<Task> initList = initTasks(parameters);
+    public static void initTask(String token, HashMap<String, String> parameters) throws IOException, InterruptedException {
 
-        List<Task> ads = initList.stream()
-                .filter(el -> el.getTaskType() == TaskType.AD)
-                .collect(Collectors.toList());
+        ManagerTask task = new ManagerTask(token, parameters);
+        tasks.add(task);
 
-        List<Task> category = initList.stream()
-                .filter(el -> el.getTaskType() == TaskType.CATEGORY)
-                .collect(Collectors.toList());
+        EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() +"\"}]}");
+    }
 
-        long startTime = new Date().getTime();
-        if (category.size() > 0)
-            ads.addAll(updateCategory(category));
+    private static void updateQuery() {
+        for (ManagerTask task : tasks) {
+            EventSocket.sendMessage(task.getToken(),
+                    "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + (tasks.indexOf(task) + 1) +"\"}]}");
+        }
+    }
 
-        List<Ad> result = updateAds(ads);
+    private static void doTask() {
+        Thread demon = new Thread(() -> {
+            while (true) {
+                if (tasks.size() > 0) {
+                    ManagerTask task = tasks.get(0);
+                    task.start();
 
-        Thread.sleep(1000);
-        System.out.println("=============================================================");
-        System.out.println(
-                "ПОЛУЧЕНО: " + result.size() + " результата | " +
-                "ПОЛНОЕ ВРЕМЯ: " + (new Date().getTime() - (startTime + 1000)) + " ms");
-        System.out.println("=============================================================");
+                    EventSocket.sendMessage(task.getToken(),
+                            "{\"message\":\"done\",\"parameters\":[{\"name\":\"url\",\"value\":\"" + task.getResultLink() +"\"}]}");
 
-//        saveToDB(result);
-//        saveToFile(result);
-        RequestManager.closeClient();
+                    tasks.remove(task);
+                    updateQuery();
+
+                    System.gc();
+                    ProxyManager.clear();
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ignored) {}
+            }
+        });
+        demon.setDaemon(true);
+        demon.start();
     }
 
     private static void saveToDB(List<Ad> result) {
@@ -67,66 +84,7 @@ public class TaskManager {
         Files.write(Paths.get("result.csv"), data, Charset.forName("UTF-8"));
     }
 
-    public static List<Task> updateCategory(List<Task> tasks) throws IOException, InterruptedException {
 
-        List<Task> result = new ArrayList<>();
-
-        CategoryHandler categoryHandler = new CategoryHandler();
-        categoryHandler.setJob(tasks);
-        result = categoryHandler.process();
-
-        return result;
-    }
-
-    private static List<Ad> updateAds(List<Task> adTasks) throws IOException, InterruptedException {
-
-//        List<Ad> result = DbManager.updateAds(adTasks);
-        List<Ad> result = new ArrayList<>();
-        List<Task> filterTasks = adTasks.stream()
-                .filter(el -> result.stream().noneMatch(e -> e.getId().equals(el.getId())))
-                .collect(Collectors.toList());
-
-        AdHandler adHandler = new AdHandler();
-        adHandler.setJob(filterTasks);
-        result.addAll(adHandler.process());
-
-        return result;
-    }
-
-    private static ArrayList<Task> initTasks(HashMap<String, String> parameters) throws IOException {
-
-        ArrayList<Task> result = new ArrayList<>();
-        int pages = Integer.parseInt(parameters.get("pages"));
-
-        Document doc = Jsoup.connect("https://www.olx.ua/ajax/search/list/")
-                .data(parameters)
-                .post();
-
-        Elements lastLink = doc.select("a[data-cy='page-link-last']");
-
-        int resultPages = lastLink.size() > 0 ? Integer.parseInt(lastLink.get(0).text()) : 1;
-        resultPages = pages < resultPages ? pages : resultPages;
-
-        Elements rawList = doc.select("tr.wrap");
-        for (Element ad : rawList) {
-            String link = ad.select("a.link").attr("href");
-            link = link.substring(0, link.lastIndexOf(".html") + 5);
-            String id = link.substring(link.lastIndexOf("ID") + 2, link.length() - 5);
-
-            result.add(new Task(id, link, TaskType.AD));
-        }
-
-        if (resultPages > 1) {
-            String pageLink = lastLink.get(0).attr("href");
-            pageLink = pageLink.substring(0, pageLink.lastIndexOf("page") + 5);
-
-            for (int i = 2; i <= resultPages; i++) {
-                result.add(new Task(String.valueOf(i), pageLink + i, TaskType.CATEGORY));
-            }
-        }
-
-        return result;
-    }
 
 
 }

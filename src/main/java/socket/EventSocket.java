@@ -1,5 +1,7 @@
 package socket;
 
+import manager.Status;
+import manager.TaskManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,6 +16,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,19 +24,31 @@ import java.util.Map;
 @ServerEndpoint(value = "/task")
 public class EventSocket {
 
-    private static List<String> allTokens = new ArrayList<>();
-    private Session sess;
+    private static HashMap<String, Session> allTokens = new HashMap<>();
+    private String token;
 
     @OnOpen
     public void onWebSocketConnect(Session sess) throws IOException {
         String token = getToken(sess);
-        if (allTokens.contains(token)) {
+        if (allTokens.containsKey(token)) {
             sess.close();
         } else {
             System.out.println("ТОКЕН ДОБАВЛЕН В БАЗУ: " + token);
-            allTokens.add(token);
-            this.sess = sess;
+            allTokens.put(token, sess);
+            this.token = token;
         }
+    }
+
+    public static void sendMessage(String token, String message) {
+        try {
+            getSess(token).getBasicRemote().sendText(message);
+        } catch (Exception e) {
+            System.err.println("Не могу послать собщение по веб-сокету, токен: " + token);
+        }
+    }
+
+    private static Session getSess(String token) {
+        return allTokens.get(token);
     }
 
     private String getToken(Session sess) {
@@ -42,33 +57,33 @@ public class EventSocket {
     }
 
     @OnMessage
-    public void onWebSocketText(String json) {
-        System.out.println("Received TEXT json: " + json);
-//        json = "{\"message\":\"start\",\"parameters\":[{\"name\":\"view\",\"value\":\"\"},{\"name\":\"min_id\",\"value\":\"\"},{\"name\":\"q\",\"value\":\"\"},{\"name\":\"search[city_id]\",\"value\":\"\"},{\"name\":\"search[region_id]\",\"value\":\"\"},{\"name\":\"search[district_id]\",\"value\":\"0\"},{\"name\":\"search[dist]\",\"value\":\"0\"},{\"name\":\"search[filter_float_price:from]\",\"value\":\"\"},{\"name\":\"search[filter_float_price:to]\",\"value\":\"\"},{\"name\":\"search[category_id]\",\"value\":\"\"},{\"name\":\"page\",\"value\":\"1\"}]}";
+    public void onWebSocketText(String json) throws IOException, InterruptedException {
 
-//        System.out.println("MESSAGE FROM: " + sess.getId());
-
-        /*JSONObject obj = new JSONObject(json);
+        JSONObject obj = new JSONObject(json);
         String message = obj.getString("message");
 
         switch (message) {
             case "start": {
                 System.out.println("Получена команда к старту, ПАРАМЕТРЫ:");
                 JSONArray params = obj.getJSONArray("parameters");
+
+                HashMap<String, String> param = new HashMap<>();
                 for (int i = 0; i < params.length(); i++) {
                     String name = params.getJSONObject(i).getString("name");
                     String value = params.getJSONObject(i).getString("value");
 
+                    param.put(name, value);
                     System.out.println("    *" + name + ": " + value);
                 }
+
+                TaskManager.initTask(token, param);
             }
-        }*/
+        }
     }
 
     @OnClose
     public void onWebSocketClose(CloseReason reason) {
-        if (sess != null) {
-            String token = getToken(sess);
+        if (token != null) {
             System.out.println("ЗАКРЫВАЮ СОЕДЕНЕНИЕ, TOKEN: " + token);
             allTokens.remove(token);
         } else {
