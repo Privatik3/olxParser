@@ -15,6 +15,7 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
+import socket.EventSocket;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class RequestManager {
         }
     }
 
-    public static List<Task> execute(List<Task> tasks) throws InterruptedException, IOException {
+    public static List<Task> execute(String token, List<Task> tasks) throws InterruptedException, IOException {
 
         if (client == null)
             initClient();
@@ -62,7 +63,7 @@ public class RequestManager {
         ArrayList<RequestConfig> goodProxy = new ArrayList<>();
 
         final long startTime = new Date().getTime();
-        final CountDownLatch success = new CountDownLatch(tasks.size());
+        final int initTaskSize = tasks.size();
 
         ArrayList<Task> taskMultiply = new ArrayList<>(tasks);
 
@@ -120,8 +121,6 @@ public class RequestManager {
 
                                 task.setRaw(body);
                                 result.add(task);
-
-                                success.countDown();
                                 goodProxy.add(proxy);
                             }
 //                            } else
@@ -150,6 +149,9 @@ public class RequestManager {
 
             cdl.await(8, TimeUnit.SECONDS);
             taskMultiply.removeAll(result);
+            int progress = (result.size() / initTaskSize) * 100;
+            EventSocket.sendMessage(token,
+                    "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + progress + "\"}]}");
         }
 
 //        ProxyManager.setWorkProxies(goodProxy);

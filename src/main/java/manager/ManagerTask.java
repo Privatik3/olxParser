@@ -7,6 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import parser.OlxParser;
 import socket.EventSocket;
 import utility.RequestManager;
 
@@ -47,7 +48,7 @@ public class ManagerTask {
     public void start() {
 
         try {
-            /*ArrayList<Task> initList = initTasks(param);
+            ArrayList<Task> initList = initTasks(param);
             List<Task> ads = initList.stream()
                     .filter(el -> el.getTaskType() == TaskType.AD)
                     .collect(Collectors.toList());
@@ -71,13 +72,13 @@ public class ManagerTask {
 
 //        saveToDB(result);
 //        saveToFile(result);
-            RequestManager.closeClient();*/
+            RequestManager.closeClient();
 
-            for (int i = 1; i <= 5; i++) {
+            /*for (int i = 1; i <= 5; i++) {
                 Thread.sleep(2000);
                 EventSocket.sendMessage(token,
                         "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + i * 20 + "\"}]}");
-            }
+            }*/
 
             this.resultLink = "https://www.ibm.com/developerworks/ru/library/j-5things4/index.html";
         } catch (Exception e) {
@@ -104,9 +105,8 @@ public class ManagerTask {
                 .filter(el -> result.stream().noneMatch(e -> e.getId().equals(el.getId())))
                 .collect(Collectors.toList());
 
-        AdHandler adHandler = new AdHandler();
-        adHandler.setJob(filterTasks);
-        result.addAll(adHandler.process());
+        List<Task> resultList = RequestManager.execute(token, filterTasks);
+        result.addAll(OlxParser.parseAds(resultList));
 
         return result;
     }
