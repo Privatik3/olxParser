@@ -2,24 +2,15 @@ package manager;
 
 import manager.db.DbManager;
 import manager.entity.Ad;
-import manager.handlers.AdHandler;
-import manager.handlers.CategoryHandler;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import socket.EventSocket;
 import utility.ProxyManager;
-import utility.RequestManager;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 public class TaskManager {
 
@@ -50,10 +41,14 @@ public class TaskManager {
                 try {
                     if (tasks.size() > 0) {
                         ManagerTask task = tasks.get(0);
+                        tasks.remove(task);
+
+                        boolean isExist = EventSocket.allTokens.containsKey(task.getToken());
+                        if (!isExist) continue;
+
                         task.start();
 
                         EventSocket.sendResult(task);
-                        tasks.remove(task);
                         updateQuery();
 
                         System.gc();

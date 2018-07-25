@@ -5,11 +5,15 @@ import java.util.*;
 public class Ad {
 
     private String id;
+    private String url;
     private String serialNumber;
     private String title;
     private String category;
     private String price;
     private String priceComment;
+
+    private boolean top;
+    private boolean promoted;
 
     private String city;
     private Date date;
@@ -18,6 +22,34 @@ public class Ad {
     private String description;
     private String views;
     private Owner owner;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public boolean isTop() {
+        return top;
+    }
+
+    public void setTop(boolean top) {
+        this.top = top;
+    }
+
+    public boolean isPromoted() {
+        return promoted;
+    }
+
+    public void setPromoted(boolean promoted) {
+        this.promoted = promoted;
+    }
+
+    public void setOwner(Owner owner) {
+        this.owner = owner;
+    }
 
     public void setId(String id) {
         this.id = id;

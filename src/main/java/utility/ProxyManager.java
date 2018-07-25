@@ -4,6 +4,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -21,10 +22,7 @@ public class ProxyManager {
 
     public static void loadProxies() {
         try {
-            String[] proxyApi = new String[] {
-                    "http://api.proxy.am/?key=jffjh3a4ch&only-not=CN&speed&clean&uptime=100",
-                    "http://api.best-proxies.ru/proxylist.txt?key=d2f7343437d72ff70632766679db0a80&speed=1&type=http,https&unique=1&level=1&exclude=1&country=cn&response=5000&uptime=1&limit=0"
-            };
+            List<String> proxyApi = Files.readAllLines(Paths.get("proxy-list.txt"));
 
             for (String api : proxyApi) {
                 URL obj = new URL(api);

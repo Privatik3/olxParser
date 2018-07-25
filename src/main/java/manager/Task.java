@@ -1,5 +1,7 @@
 package manager;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class Task {
@@ -7,12 +9,33 @@ public class Task {
     private String id;
     private String url;
     private TaskType taskType;
+    private HashMap<String, String> param;
     private String raw;
 
     public Task(String id, String url, TaskType taskType) {
         this.id = id;
         this.url = url;
         this.taskType = taskType;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setTaskType(TaskType taskType) {
+        this.taskType = taskType;
+    }
+
+    public HashMap<String, String> getParam() {
+        return param;
+    }
+
+    public void setParam(HashMap<String, String> param) {
+        this.param = param;
     }
 
     public TaskType getTaskType() {

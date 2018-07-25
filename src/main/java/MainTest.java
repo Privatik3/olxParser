@@ -1,4 +1,5 @@
 import manager.TaskManager;
+import org.json.JSONObject;
 import utility.ProxyManager;
 
 import java.io.File;
@@ -8,6 +9,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -15,7 +18,7 @@ public class MainTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        System.setErr(new PrintStream(new File("error.txt")));
+//        System.setErr(new PrintStream(new File("error.txt")));
         Scanner in = new Scanner(System.in);
 
         while ( true ) {
@@ -28,12 +31,13 @@ public class MainTest {
             parameters.put("search[category_id]", "1596");
             parameters.put("search[city_id]", "");
             parameters.put("search[dist]", "0");
-            parameters.put("search[district_id]", "");
+            parameters.put("search[district_id]", "0");
             parameters.put("search[region_id]", "");
             parameters.put("view", "");
-            parameters.put("pages", pageCount);
+            parameters.put("max_pages", pageCount);
+//            parameters.put("phones", "1");
 
-//            TaskManager.initTask(parameters);
+            TaskManager.initTask("646421", parameters);
             System.gc();
             ProxyManager.clear();
         }

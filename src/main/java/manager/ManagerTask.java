@@ -1,44 +1,51 @@
 package manager;
 
+import google.SheetsExample;
 import manager.entity.Ad;
-import manager.handlers.AdHandler;
-import manager.handlers.CategoryHandler;
+import manager.entity.Owner;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import parser.OlxParser;
 import socket.EventSocket;
 import utility.RequestManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ManagerTask {
 
     private String token;
-    private int progress;
-    private Status status;
-    private int adsCount = 0;
-    private List<Ad> result;
     private String resultLink;
     private HashMap<String, String> param = new HashMap<>();
+    private boolean isPhoneEnable;
+    private String country = "ua";
+    private String title = "";
 
     public ManagerTask(String token, HashMap<String, String> param) {
         this.token = token;
         this.param = param;
+
+        if (param.containsKey("country")) {
+            country = param.get("country").toLowerCase();
+            param.remove("country");
+        }
+
+        if (param.containsKey("title")) {
+            title = param.get("title");
+            param.remove("title");
+        }
+
+        isPhoneEnable = country.equals("ua") && param.containsKey("phones");
+        isPhoneEnable = false;
+        param.remove("phones");
+
+
     }
 
     public String getToken() {
         return token;
-    }
-
-    public int getAdsCount() {
-        return adsCount;
     }
 
     public String getResultLink() {
@@ -57,11 +64,36 @@ public class ManagerTask {
                     .filter(el -> el.getTaskType() == TaskType.CATEGORY)
                     .collect(Collectors.toList());
 
+            EventSocket.checkToken(token);
             long startTime = new Date().getTime();
             if (category.size() > 0)
                 ads.addAll(updateCategory(category));
 
+            EventSocket.checkToken(token);
             List<Ad> result = updateAds(ads);
+
+            EventSocket.checkToken(token);
+            if (isPhoneEnable) {
+                ArrayList<Task> phoneTasks = new ArrayList<>();
+                result.forEach(e -> {
+                    Task task = new Task(e.getOwner().getId(), e.getOwner().getPhoneUrl(), TaskType.PHONE);
+                    phoneTasks.add(task);
+                });
+
+                List<Owner> phones = updatePhotos(new ArrayList<>(phoneTasks));
+
+                for (Ad ad : result) {
+                    String ownerId = ad.getOwner().getId();
+                    Optional<Owner> phone = phones.stream()
+                            .filter(e -> e.getId().equals(ownerId)).findFirst();
+
+                    if (phone.isPresent())
+                        ad.getOwner().setPhones(phone.get().getPhones());
+                    else
+                        ad.getOwner().setPhones(new ArrayList<>());
+                }
+            }
+
 
             Thread.sleep(1000);
             System.out.println("=============================================================");
@@ -74,30 +106,32 @@ public class ManagerTask {
 //        saveToFile(result);
             RequestManager.closeClient();
 
-            /*for (int i = 1; i <= 5; i++) {
-                Thread.sleep(2000);
-                EventSocket.sendMessage(token,
-                        "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + i * 20 + "\"}]}");
-            }*/
-
-            this.resultLink = "https://www.ibm.com/developerworks/ru/library/j-5things4/index.html";
+            this.resultLink = SheetsExample.generateSheet(title, result, isPhoneEnable);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public List<Task> updateCategory(List<Task> tasks) throws IOException, InterruptedException {
+    private List<Owner> updatePhotos(List<Task> phoneTasks) throws Exception {
 
-        List<Task> result = new ArrayList<>();
+//        List<Ad> result = DbManager.updateAds(adTasks);
+        List<Owner> result = new ArrayList<>();
+        /*List<Task> filterTasks = adTasks.stream()
+                .filter(el -> result.stream().noneMatch(e -> e.getId().equals(el.getId())))
+                .collect(Collectors.toList());*/
 
-        CategoryHandler categoryHandler = new CategoryHandler();
-        categoryHandler.setJob(tasks);
-        result = categoryHandler.process();
+        List<Task> resultList = RequestManager.execute(token, phoneTasks);
+        result.addAll(OlxParser.parsePhones(resultList));
 
         return result;
     }
 
-    private List<Ad> updateAds(List<Task> adTasks) throws IOException, InterruptedException {
+    public List<Task> updateCategory(List<Task> tasks) throws Exception {
+        List<Task> result = RequestManager.execute(token, tasks);
+        return OlxParser.parseAdsLink(result);
+    }
+
+    private List<Ad> updateAds(List<Task> adTasks) throws Exception {
 
 //        List<Ad> result = DbManager.updateAds(adTasks);
         List<Ad> result = new ArrayList<>();
@@ -113,10 +147,10 @@ public class ManagerTask {
 
     private ArrayList<Task> initTasks(HashMap<String, String> parameters) throws IOException {
 
-        ArrayList<Task> result = new ArrayList<>();
         int pages = Integer.parseInt(parameters.get("max_pages"));
+        parameters.remove("max_pages");
 
-        Document doc = Jsoup.connect("https://www.olx.ua/ajax/search/list/")
+        Document doc = Jsoup.connect("https://www.olx." + country + "/ajax/search/list/")
                 .data(parameters)
                 .post();
 
@@ -125,14 +159,10 @@ public class ManagerTask {
         int resultPages = lastLink.size() > 0 ? Integer.parseInt(lastLink.get(0).text()) : 1;
         resultPages = pages < resultPages ? pages : resultPages;
 
-        Elements rawList = doc.select("tr.wrap");
-        for (Element ad : rawList) {
-            String link = ad.select("a.link").attr("href");
-            link = link.substring(0, link.lastIndexOf(".html") + 5);
-            String id = link.substring(link.lastIndexOf("ID") + 2, link.length() - 5);
+        Task firstPage = new Task("1", "", TaskType.CATEGORY);
+        firstPage.setRaw(doc.toString());
 
-            result.add(new Task(id, link, TaskType.AD));
-        }
+        ArrayList<Task> result = new ArrayList<>(OlxParser.parseAdsLink(Collections.singletonList(firstPage)));
 
         if (resultPages > 1) {
             String pageLink = lastLink.get(0).attr("href");

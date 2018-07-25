@@ -22,7 +22,7 @@ import java.util.Map;
 @ServerEndpoint(value = "/task")
 public class EventSocket {
 
-    private static HashMap<String, Session> allTokens = new HashMap<>();
+    public static HashMap<String, Session> allTokens = new HashMap<>();
     private String token;
 
     public static void sendResult(ManagerTask task) throws IOException {
@@ -100,5 +100,10 @@ public class EventSocket {
     @OnError
     public void onWebSocketError(Throwable cause) {
         cause.printStackTrace(System.err);
+    }
+
+    public static void checkToken(String token) throws Exception {
+        if (!allTokens.containsKey(token))
+            throw new Exception("Token not exist anymore");
     }
 }
