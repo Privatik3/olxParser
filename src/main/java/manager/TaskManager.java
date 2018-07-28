@@ -17,6 +17,7 @@ public class TaskManager {
     private static CopyOnWriteArrayList<ManagerTask> tasks = new CopyOnWriteArrayList<>();
 
     static {
+        System.setErr(null);
         doTask();
     }
 

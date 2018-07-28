@@ -95,11 +95,10 @@ public class ManagerTask {
             }
 
 
-            Thread.sleep(1000);
             System.out.println("=============================================================");
             System.out.println(
                     "ПОЛУЧЕНО: " + result.size() + " результата | " +
-                            "ПОЛНОЕ ВРЕМЯ: " + (new Date().getTime() - (startTime + 1000)) + " ms");
+                            "ПОЛНОЕ ВРЕМЯ: " + (new Date().getTime() - (startTime)) + " ms");
             System.out.println("=============================================================");
 
 //        saveToDB(result);

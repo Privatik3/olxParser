@@ -52,8 +52,8 @@ public class RequestManager {
                     create(cores).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(10000).
-                    setMaxConnTotal(10000).build();
+                    setMaxConnPerRoute(1024).
+                    setMaxConnTotal(1024).build();
 
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -99,9 +99,8 @@ public class RequestManager {
             }
             wave = taskMultiply.size();
 
-
             tasks.clear();
-            for (int i = 0; tasks.size() < allProxy.size() && tasks.size() < (taskMultiply.size() * 10); i++) {
+            for (int i = 0; tasks.size() < allProxy.size() && tasks.size() < (taskMultiply.size() * 5); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
 
@@ -176,7 +175,7 @@ public class RequestManager {
 
             }
 
-            cdl.await(8, TimeUnit.SECONDS);
+            cdl.await(10, TimeUnit.SECONDS);
 
             if (!token.equals(""))
                 EventSocket.checkToken(token);
@@ -194,8 +193,6 @@ public class RequestManager {
                         "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + progress + "\"}]}");
             }
         }
-
-//        ProxyManager.setWorkProxies(goodProxy);
 
         if (tasks.size() > 0) {
             System.out.println("=============================================================");
